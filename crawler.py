@@ -24,6 +24,11 @@ def crawlEkantipur(save_output=True):
                 break
             
             month = 1 if month==12 else month+1
+        
+            print("Url Doesn't Exist", "Moving on to next")
+            continue
+        
+            
         page = page.content.decode("utf-8")
         tree = html.document_fromstring(page)
         
@@ -37,7 +42,8 @@ def crawlEkantipur(save_output=True):
         
         data = pd.concat([data,pd.DataFrame([x.find("p").text_content() for x in elements if x.find("p") is not None],columns=['text'])])
     
-    data.to_csv("ekantipur.csv")    
+    if save_output:
+        data.to_csv("ekantipur.csv")    
     return data
     
 
@@ -61,9 +67,10 @@ def crawlImageKhabar(save_output=True):
         i = i+1
         
 
-    data.to_csv("imagekhabar.csv")
+    if save_output:
+        data.to_csv("imagekhabar.csv")
     return data
 
 
 if(__name__ == "__main__"):
-    print(crawlEkantipur())
+    crawlEkantipur()
