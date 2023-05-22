@@ -3,12 +3,12 @@ from lxml import html
 import pandas as pd
 
 ## URLS:
-### https://www.imagekhabar.com/news/tag/कोरोना/
-### https://ekantipur.com/health/2021/12/30
-### https://annapurnapost.prixa.net/search/?q=कोभिड&page=2
-### https://annapurnapost.com/search/?q=कोरोना&page=3
-### https://www.ratopati.com/search?query=कोभिड&page=2
-### https://www.ratopati.com/search?query=कोरोना&page=2
+#### https://www.imagekhabar.com/news/tag/कोरोना/
+#### https://ekantipur.com/health/2021/12/30
+#### https://annapurnapost.prixa.net/search/?q=कोभिड&page=2
+#### https://annapurnapost.com/search/?q=कोरोना&page=3
+#### https://www.ratopati.com/search?query=कोभिड&page=2
+#### https://www.ratopati.com/search?query=कोरोना&page=2
 
 def crawlEkantipur(save_output=True):
     api_point = "https://ekantipur.com/health/"+"{y}/{m}/{d}"#.format(y=2021,m=11,d=28)
@@ -80,4 +80,5 @@ def crawlImageKhabar(save_output=True):
 
 
 if(__name__ == "__main__"):
+    crawlImageKhabar()
     crawlEkantipur()
