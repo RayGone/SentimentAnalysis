@@ -35,28 +35,40 @@ nepCov19 = tokenizer(nepCov19['train']['Sentences']).input_ids
 max_len = 95
 input = pad_sequences(nepCov19,maxlen = max_len,padding='post',value=tokenizer.pad_token_id)
 
-model = Sequential()
-embd_layer = Embedding(len(tokenizer), 480, input_length=max_len)
-model.add(embd_layer)
-model.add(Flatten())
-model.add(Dense(256,activation='relu'))
-model.add(Dense(128,activation='sigmoid'))
-model.add(Dense(3,activation=tf.nn.softmax))
-model.compile(
-    optimizer=tf.keras.optimizers.Adam(lr=0.00005),
-    loss='sparse_categorical_crossentropy',
-    metrics=['acc'])
-
-print(model.summary())
-
 train_block = int((data_len*8)/10)
 print("Training Size",train_block)
 
-print("Training The Model")
-history = model.fit(tf.constant(input[:train_block]),
-          tf.constant(labels[:train_block]),
-          epochs=5, validation_split=0.1)
+try:
+    raise("Let's Build New Model")
+    print("Loading saved model")
+    model = tf.keras.models.load_model("saved_models/MLP_4_SA")
+    print(model.summary())
+except:
+    model = Sequential()
+    embd_layer = Embedding(len(tokenizer), 480, input_length=max_len)
+    model.add(embd_layer)
+    model.add(Flatten())
+    model.add(Dense(256,activation='relu'))
+    model.add(Dense(128,activation='sigmoid'))
+    model.add(Dense(3,activation=tf.nn.softmax))
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(lr=0.00005),
+        loss='sparse_categorical_crossentropy',
+        metrics=['acc'])
 
+    print(model.summary())
+
+
+    print("Training The Model")
+    history = model.fit(tf.constant(input[:train_block]),
+            tf.constant(labels[:train_block]),
+            epochs=5, validation_split=0.1)
+
+    model.save("saved_models/MLP_4_SA")
+    
+####-----------------------------------------
+## ---------------Something------------------
+####-----------------------------------------
 print("l\n\n******Evaluations***********\n")
 pred_labels = [np.argmax(x) for x in 
         tf.nn.softmax(
