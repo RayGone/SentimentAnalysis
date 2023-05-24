@@ -45,14 +45,14 @@ try:
     print(model.summary())
 except:
     model = Sequential()
-    embd_layer = Embedding(len(tokenizer), 480, input_length=max_len)
+    embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
     model.add(embd_layer)
     model.add(Flatten())
     model.add(Dense(256,activation='relu'))
     model.add(Dense(128,activation='sigmoid'))
     model.add(Dense(3,activation=tf.nn.softmax))
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(lr=0.00005),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.000099),
         loss='sparse_categorical_crossentropy',
         metrics=['acc'])
 
@@ -94,3 +94,30 @@ print(confusion_matrix)
 cmd = ConfusionMatrixDisplay(confusion_matrix.numpy())
 cmd.plot()
 # plt.show()
+
+print("True Labels Onlys",tf.math.confusion_matrix(labels[train_block:],labels[train_block:],num_classes=3))
+print("True Labels Onlys",tf.math.confusion_matrix(labels,labels,num_classes=3))
+
+"""
+    BEST RESULT:
+        F1-Score 0.6933545414392035
+        Precision-Score 0.690662338193696
+        Recall-Score 0.7036594473487677
+        accuracy_Score 0.7036594473487677
+        confusion matrix:
+            [[ 296  383  295]
+             [ 154 2363  509]
+             [ 154  489 2052]]
+            
+    HyperParameters:        
+        rand_seed = 9 ## Seed for model weights and train_test data shuffle
+        epochs = 5
+        max_len = 95 ## maximum input length
+        embedding_size = 380
+        optimizer = tf.keras.optimizers.Adam(lr=0.000099)
+        metrics = ['acc']
+        loss = sparse_categorical_crossentropy
+        Dense_1 = 256, activation = relu
+        Dense_2 = 128, activation = sigmoid
+        Dense_3 = 3, activation = softmax
+"""

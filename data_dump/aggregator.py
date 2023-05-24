@@ -13,8 +13,8 @@ data.drop(["Unnamed: 0"],axis=1,inplace=True)
 data.drop_duplicates(inplace=True)
 data.to_csv("aggregated.csv")
 
-self_selected = pd.read_csv('agg_self_selected_covid_neutral_sentiment.csv',engine='python',sep='\r\n')
-data = pd.concat([data,self_selected])
-data.drop_duplicates(inplace=True)
+# self_selected = pd.read_csv('agg_self_selected_covid_neutral_sentiment.csv',engine='python',sep='\r\n')
+# data = pd.concat([data,self_selected])
+# data.drop_duplicates(inplace=True)
 
-data.to_csv("aggregated.csv")
+# data.to_csv("aggregated.csv")
