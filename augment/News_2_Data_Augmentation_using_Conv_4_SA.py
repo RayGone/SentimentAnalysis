@@ -7,7 +7,7 @@
     
     The output is saved in data_dump/MLP_4_SA_neutral_labeled_news.csv
 """
-
+import os
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -15,6 +15,7 @@ from transformers import PreTrainedTokenizerFast
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 csv_files = [f for f in os.listdir("data_crawler") if '.csv' in f and 'clean' in f]
+print('csv files',csv_files)
 
 data = pd.concat([
                     pd.read_csv("data_crawler/{}".format(cf),engine='python') for cf in csv_files
