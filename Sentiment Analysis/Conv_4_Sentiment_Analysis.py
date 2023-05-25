@@ -22,6 +22,7 @@ def seed_everything(seed=0):
 rand_seed = 9
 seed_everything(rand_seed)
 
+use_pre_trained_embd_layer = True
 use_googletrans_aug_data = True
 # include_MLP_new_neutral_aug = False
 save_model = True
@@ -87,26 +88,31 @@ test_labels = [LabelEncoding(x) for x in nepCov19['test']['Sentiment']]
 print("All True Labels",tf.math.confusion_matrix([np.argmax(x) for x in train_labels+test_labels],[np.argmax(x) for x in train_labels+test_labels],num_classes=3))
 
 embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
+if use_pre_trained_embd_layer:
+    print("\n****Using Pre-Trained Embedding Layer****")
+    embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
+    
 try:
-    raise("Let's Build New Model")
+    # raise("Let's Build New Model")
     print("Loading saved model")
-    model = tf.keras.models.load_model("saved_models/MLP_4_SA")
+    model = tf.keras.models.load_model("saved_models/Conv_4_SA")
     print(model.summary())
 except:
     model = Sequential()
     model.add(embd_layer)
     model.add(Conv1D(64,5,activation='relu'))
+    model.add(Dropout(0.3))
     model.add(MaxPool1D(3))
-    model.add(Conv1D(32,5,activation='relu'))
-    model.add(MaxPool1D(3))
+    model.add(Conv1D(32,3,activation='relu'))
+    model.add(MaxPool1D(2))
     model.add(Flatten())
     model.add(Dense(512,activation='relu'))
     model.add(Dropout(0.4))
     model.add(Dense(128,activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dropout(0.3))
     model.add(Dense(3,activation='sigmoid'))
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.00008),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
         loss='categorical_crossentropy',
         metrics=['acc',tf.keras.metrics.Precision()])
 
@@ -114,7 +120,7 @@ except:
 
     history = model.fit(tf.constant(train_input),
             tf.constant(train_labels),
-            epochs=5)
+            epochs=10)
 
     if save_model:
         print("Saving the model")
@@ -160,21 +166,40 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
                 [[ 366  358  224]
                 [ 236 2304  432]
                 [ 217  505 2053]]
+        #### With googletrans Aug Data
+        F1-Score 0.7406357509162472
+        Precision-Score 0.7417297129889808
+        Recall-Score 0.7410655845005891
+        Accuracy-Score 0.7410655845005891
+        tf.Tensor(
+        [[1337  333  245]
+        [ 250 2337  375]
+        [ 243  532 1987]]
     HyperParameters:        
         rand_seed: 9 ## Seed for model weights and train_test data shuffle
-        epochs: 5
+        epochs: 10
         max_len: 95 ## maximum input length
         embedding_size: 380
-        optimizer: tf.keras.optimizers.Adam(lr=0.000099)
+        optimizer: tf.keras.optimizers.Adam(lr=0.00005)
         loss: sparse_categorical_crossentropy
         Conv1_l1: 
-            units: (32,5)
+            units: (64,5)
             activation: relu
+        Dropout: 0.3
         maxpool_l1: 3
-        Dense_1: 
-            units: 100 
+        Conv1_l2: 
+            units: (32,3)
             activation: relu
+        maxpool_l1: 2
+        Dense_1: 
+            units: 512 
+            activation: relu
+        Dropout: 0.4
         Dense_2: 
+            units: 128 
+            activation: relu
+        Dropout: 0.3
+        Dense_3: 
             units: 3 
             activation: sigmoid
 """
