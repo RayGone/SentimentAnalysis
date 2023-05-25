@@ -154,7 +154,7 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
         Epoch 5/5
         837/837 [==============================] - 19s 23ms/step - loss: 0.4255 - acc: 0.8412 - precision: 0.7573
         
-        #### With Aug data
+        #### With googletrans Aug data
         F1-Score 0.7364478486255656
         Precision-Score 0.7374669280946146
         Recall-Score 0.7364838329624296
