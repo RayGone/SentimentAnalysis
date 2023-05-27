@@ -31,6 +31,8 @@ for cf in tqdm(csv_files):
     
 print(agg_data.shape)
 print("Saving Collective Data To File: NepCovNews.csv")
+agg_data.drop_duplicates(inplace=True)
+agg_data.index = range(agg_data.shape[0])
 agg_data.to_csv("NepCovNews.csv")
 
 # import datasets

@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import os
 import random
 import numpy as np
@@ -9,7 +15,7 @@ from transformers import PreTrainedTokenizerFast
 
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten,Embedding,Dense,LSTM,Dropout,GRU
+from tensorflow.keras.layers import Flatten,Embedding,Dense,Bidirectional,LSTM,Dropout
 import gc
 
 rand_seed = 9
@@ -25,16 +31,7 @@ def seed_everything(seed=0):
     
 seed_everything(rand_seed)
 
-def LabelEncoding(x):
-    if x==0:
-        return [1,0,0]
-    if x==1:
-        return [0,1,0]
-    if x==-1:
-        return [0,0,1]
-    
-    return x
- 
+
 nepCov19 = load_dataset("raygx/NepCov19Tweets").shuffle(rand_seed)
 
 if use_googletrans_aug_data:
@@ -48,12 +45,26 @@ if use_googletrans_aug_data:
                     datasets.Dataset.from_pandas(aug_data) 
                 ])     
         })  
+    
+nepCov19
 
+tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/DistilGPT2_NepaliCasualLM")
 max_len = 95
-tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM")
+
+def LabelEncoding(x):
+    if x==0:
+        return [1,0,0]
+    if x==1:
+        return [0,1,0]
+    if x==-1:
+        return [0,0,1]
+    
+    return x
 
 nepCov19 = nepCov19['train'].train_test_split(test_size=0.2)
 print("Dataset",nepCov19)
+
+print("Preparing Training Input and Labels")
 train_input = pad_sequences(
                         tokenizer(
                             nepCov19['train']['Sentences']
@@ -64,6 +75,7 @@ train_input = pad_sequences(
                     )
 train_labels = [LabelEncoding(x) for x in nepCov19['train']['Sentiment']]
 
+print("Preparing Test Input and Labels")
 test_input = pad_sequences(
                         tokenizer(
                             nepCov19['test']['Sentences']
@@ -74,13 +86,19 @@ test_input = pad_sequences(
                     )
 test_labels = [LabelEncoding(x) for x in nepCov19['test']['Sentiment']]
 
-print("All True Labels",tf.math.confusion_matrix([np.argmax(x) for x in train_labels+test_labels],[np.argmax(x) for x in train_labels+test_labels],num_classes=3))
+cnf = tf.math.confusion_matrix(
+                [np.argmax(x) for x in train_labels+test_labels],[np.argmax(x) for x in train_labels+test_labels],num_classes=3
+            ).numpy()
+print(cnf)
 
-### https://stats.stackexchange.com/questions/181/how-to-choose-the-number-of-hidden-layers-and-nodes-in-a-feedforward-neural-netw/136542#136542
+
+### https://stats.stackexchange.com/questions/181/
+#### /how-to-choose-the-number-of-hidden-layers-and-nodes-in-a-feedforward-neural-netw/136542#136542
 n_hidden = int(len(train_labels)/(2*(95 + 3)))
 
+
 try:
-    raise("Let's Build New Model")
+    # raise("Let's Build New Model")
     print("Loading saved model")
     model = tf.keras.models.load_model("saved_models/LSTM_4_SA")
     print(model.summary())
@@ -94,33 +112,29 @@ except:
         
         model = Sequential()
         model.add(embd_layer)
-        # model.add(LSTM(n_hidden,activation='relu',return_sequences=True))
-        # model.add(Dropout(0.3))
-        model.add(LSTM(n_hidden,activation='relu'))
+        model.add(Bidirectional(LSTM(n_hidden)))
         model.add(Dropout(0.3))
-        # model.add(Flatten())
-        # model.add(Dense(512,activation='relu'))
-        # model.add(Dropout(0.4))
+        model.add(Flatten())
         model.add(Dense(128,activation='relu'))
         model.add(Dropout(0.2))
         model.add(Dense(3,activation='sigmoid'))
         
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
             loss='categorical_crossentropy',
             metrics=['acc',tf.keras.metrics.Precision()])
 
         print(model.summary())
         history = model.fit(tf.constant(train_input),
                 tf.constant(train_labels),
-                epochs=15)
+                epochs=5)
 
         if save_model:
             print("Saving the model")
             model.save(os.path.join(os.getcwd(),"saved_models/LSTM_4_SA"))
             
 
-print("l\n\n******Evaluations***********\n")
+print("\n\n******Evaluations***********\n")
 pred_labels = [np.argmax(x) for x in 
         tf.nn.softmax(
             model.predict(
@@ -143,39 +157,11 @@ import matplotlib.pyplot as plt
 
 confusion_matrix = tf.math.confusion_matrix(test_labels,pred_labels,num_classes=3)
 print(confusion_matrix)
-cmd = ConfusionMatrixDisplay(confusion_matrix.numpy())
+cmd = ConfusionMatrixDisplay(confusion_matrix.numpy(),
+            display_labels=['Neutral',"Positive","Negative"])
 cmd.plot()
 # plt.show()
 print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_classes=3))
-"""
--- Using NepCov19Tweets Dataset As it is --
-    BEST_RESULT: 
-        F1-Score: 0.7022021185799427
-        Precision-Score: 0.700344004267401
-        Recall-Score: 0.7054518297236744
-        accuracy_Score: 0.7054518297236744
-        confusion matrix:
-                [[ 366  358  224]
-                [ 236 2304  432]
-                [ 217  505 2053]]
-    HyperParameters:        
-        rand_seed: 9 ## Seed for model weights and train_test data shuffle
-        epochs: 5
-        max_len: 95 ## maximum input length
-        embedding_size: 380
-        optimizer: tf.keras.optimizers.Adam(lr=0.000099)
-        loss: sparse_categorical_crossentropy
-        Conv1_l1: 
-            units: (32,5)
-            activation: relu
-        maxpool_l1: 3
-        Dense_1: 
-            units: 100 
-            activation: relu
-        Dense_2: 
-            units: 3 
-            activation: softmax
-"""
 
 """
 -- Added Neutral Labeled News Data and Aggregated Data --
@@ -192,7 +178,7 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
         rand_seed: 9 ## Seed for model weights and train_test data shuffle
         epochs: 5
         max_len: 95 ## maximum input length
-        embedding_size: 380
+        embedding_size: 380 #used pretrained embed layer
         optimizer: tf.keras.optimizers.Adam(lr=0.000099)
         loss: sparse_categorical_crossentropy
         Conv1_l1: 
@@ -210,3 +196,4 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
             units: 3 
             activation: softmax
 """
+
