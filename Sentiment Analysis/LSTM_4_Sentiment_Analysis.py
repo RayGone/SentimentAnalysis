@@ -20,8 +20,8 @@ import gc
 
 rand_seed = 9
 use_pre_trained_embd_layer = True
-use_googletrans_aug_data = True
-save_model = True
+use_googletrans_aug_data = False
+save_model = False
 
 def seed_everything(seed=0):
     random.seed(seed)
@@ -32,7 +32,7 @@ def seed_everything(seed=0):
 seed_everything(rand_seed)
 
 
-nepCov19 = load_dataset("raygx/NepCov19Tweets").shuffle(rand_seed)
+nepCov19 = load_dataset("raygx/NepCov19TweetsPlus").shuffle(rand_seed)
 
 if use_googletrans_aug_data:
     print("\nAdding Data to Neutral class \n- augmented through googletrans \n- ne-2-en-2-ne\n")
@@ -98,7 +98,7 @@ n_hidden = int(len(train_labels)/(2*(95 + 3)))
 
 
 try:
-    # raise("Let's Build New Model")
+    raise("Let's Build New Model")
     print("Loading saved model")
     model = tf.keras.models.load_model("saved_models/LSTM_4_SA")
     print(model.summary())

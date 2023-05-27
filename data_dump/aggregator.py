@@ -14,7 +14,7 @@ if False: ## fixing tweets crawled data
     data.to_csv("cleaned_aggregated_tweets.csv")
 
 ## Task 2
-if False:    
+if True:    
     data = pd.concat([pd.read_csv(f_csv)[['text']] for f_csv in csv_files])
     print("Before Drop Duplicate:",data.shape)
     data.drop_duplicates(inplace=True)
@@ -27,8 +27,9 @@ if False:
 
 # data.to_csv("aggregated.csv")
 
-if False: ## Task 3
+if True: ## Task 3
     print("#Task 3")
+    # काेराेना भाइरस मास्क कोभिड महामारी -- मृत्यु , ज्यान ग (गुमाउने, गएको) , आरोप
     data = pd.read_csv("aggregated_common.csv")[['text']]
     corona = data[data['text'].str.contains("काेराेना")]
     virus = data[data['text'].str.contains("भाइरस")]
@@ -37,5 +38,10 @@ if False: ## Task 3
     pandemic = data[data['text'].str.contains("महामारी")]
     
     data = pd.concat([corona, virus, mask, covid, pandemic])
-    print(data) # काेराेना भाइरस मास्क कोभिड महामारी 
+    print(data.shape) 
+    
+    data = data[~data['text'].str.contains('मृत्यु')]
+    data = data[~data['text'].str.contains('ज्यान ग')]
+    data = data[~data['text'].str.contains('आरोप')]
+    print(data)
     data.to_csv("aggregated_common_cleaned.csv")
