@@ -18,7 +18,7 @@ def seed_everything(seed=0):
     np.random.seed(seed)
     tf.keras.utils.set_random_seed(rand_seed)
 
-use_googletrans_aug_data = True
+use_googletrans_aug_data = False
 rand_seed = 9
 seed_everything(rand_seed)
 
@@ -33,21 +33,19 @@ def LabelEncoding(x):
         # return 1
         return [0,1,0]
     
-nepCov19 = load_dataset("raygx/NepCov19Tweets").shuffle(rand_seed)
+nepCov19 = load_dataset("raygx/NepCov19TweetsPlus").shuffle(rand_seed)
 
 if use_googletrans_aug_data:
     print("\n\nAdding Data to Neutral class \n- augmented through googletrans \n- ne-2-en-2-ne")
     aug_data = pd.read_csv("augment/googletrans_augmented_data.csv")
     aug_data = aug_data.rename(columns={"Unnamed: 0":"Sentiment","ne":"Sentences"})
     aug_data['Sentiment'] = np.zeros(aug_data.shape[0],dtype=np.int32)
+    nepCov19 = pd.concat([nepCov19['train'].to_pandas(),aug_data]).drop_duplicates()
+    # print(nepCov19['Sentiment'].value_counts())
     nepCov19 = datasets.DatasetDict({
-        'train':datasets.concatenate_datasets([
-                    nepCov19.filter(lambda x: x['Sentiment']!=0)['train'],
-                    datasets.Dataset.from_pandas(aug_data) 
-                ])     
+        'train':datasets.Dataset.from_pandas(nepCov19)   
         })  
     
-    # print(nepCov19['train'].to_pandas()['Sentiment'].value_counts())
     
 print(nepCov19)
 
@@ -106,7 +104,7 @@ except:
             tf.constant(train_labels),
             epochs=5)#, validation_split=0.1)
 
-    model.save("saved_models/MLP_4_SA")
+    # model.save("saved_models/MLP_4_SA")
     
 ####-----------------------------------------
 ## ---------------Something------------------

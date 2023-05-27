@@ -23,8 +23,7 @@ rand_seed = 9
 seed_everything(rand_seed)
 
 use_pre_trained_embd_layer = True
-use_googletrans_aug_data = True
-# include_MLP_new_neutral_aug = False
+use_googletrans_aug_data = False
 save_model = True
 
 def LabelEncoding(x):
@@ -37,19 +36,18 @@ def LabelEncoding(x):
     
     return x
  
-nepCov19 = load_dataset("raygx/NepCov19Tweets").shuffle(rand_seed)
+nepCov19 = load_dataset("raygx/NepCov19TweetsPlus").shuffle(rand_seed)
 
 if use_googletrans_aug_data:
     print("\n\nAdding Data to Neutral class \n- augmented through googletrans \n- ne-2-en-2-ne")
     aug_data = pd.read_csv("augment/googletrans_augmented_data.csv")
     aug_data = aug_data.rename(columns={"Unnamed: 0":"Sentiment","ne":"Sentences"})
     aug_data['Sentiment'] = np.zeros(aug_data.shape[0],dtype=np.int32)
+    nepCov19 = pd.concat([nepCov19['train'].to_pandas(),aug_data]).drop_duplicates()
+    # print(nepCov19['Sentiment'].value_counts())
     nepCov19 = datasets.DatasetDict({
-        'train':datasets.concatenate_datasets([
-                    nepCov19.filter(lambda x: x['Sentiment']!=0)['train'], # because augdata already contains original as well
-                    datasets.Dataset.from_pandas(aug_data) 
-                ])     
-        })  
+        'train':datasets.Dataset.from_pandas(nepCov19)   
+        })   
 
 # if include_MLP_new_neutral_aug:
 #     print("\n\n*******Using Aggregated Data*********\n")
