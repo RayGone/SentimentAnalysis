@@ -21,7 +21,7 @@ import gc
 rand_seed = 9
 use_pre_trained_embd_layer = True
 use_googletrans_aug_data = False
-save_model = False
+save_model = True
 
 def seed_everything(seed=0):
     random.seed(seed)
@@ -127,7 +127,7 @@ except:
         print(model.summary())
         history = model.fit(tf.constant(train_input),
                 tf.constant(train_labels),
-                epochs=5)
+                epochs=5,validation_split=0.1,batch_size=300)
 
         if save_model:
             print("Saving the model")
