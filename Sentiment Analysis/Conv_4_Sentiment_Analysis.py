@@ -26,6 +26,37 @@ use_pre_trained_embd_layer = True
 use_googletrans_aug_data = False
 save_model = False
 
+def preTrainEmbedding(embeddinglayer,data,label):
+    model = Sequential([
+        embeddinglayer,
+        Dropout(0.1),
+        Flatten(),
+        Dense(512,activation='relu'),
+        Dropout(0.4),
+        Dense(3,activation='sigmoid')
+    ])
+    
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                    initial_learning_rate=0.00001,
+                    decay_steps=100000,                
+                    decay_rate=0.95,
+                    staircase=True
+                )
+            ),
+        loss='categorical_crossentropy',
+        metrics=['acc'])
+    
+    print(model.summary())
+    history = model.fit(tf.constant(data),
+            tf.constant(label),
+            epochs=10,verbose=2
+            )
+    
+    print(history.history)
+    return embeddinglayer
+
 def LabelEncoding(x):
     if x==0:
         return [1,0,0]
@@ -90,6 +121,9 @@ embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
 if use_pre_trained_embd_layer:
     print("\n****Using Pre-Trained Embedding Layer****")
     embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
+else:
+    print("*** Pre-Training a Embedding Layer ****")
+    embd_layer = preTrainEmbedding(embd_layer,data=np.concatenate([train_input,test_input]),label=np.concatenate([train_labels,test_labels]))
     
 try:
     raise("Let's Build New Model")
@@ -99,15 +133,14 @@ try:
 except:
     model = Sequential()
     model.add(embd_layer)
-    model.add(Conv1D(64,5,activation='relu'))
+    model.add(Conv1D(128,5,activation='relu'))
     model.add(Dropout(0.2))
-    model.add(MaxPool1D(3))
+    model.add(MaxPool1D(4))
     model.add(Conv1D(64,3,activation='relu'))
     model.add(Dropout(0.2))
-    model.add(MaxPool1D(2))
     model.add(Flatten())
-    model.add(Dense(512,activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dense(1024,activation='relu'))
+    model.add(Dropout(0.3))
     model.add(Dense(128,activation='relu'))
     model.add(Dropout(0.2))
     model.add(Dense(3,activation='sigmoid'))
