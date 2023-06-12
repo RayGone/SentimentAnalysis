@@ -48,7 +48,7 @@ def preTrainEmbedding(embeddinglayer,data,label):
     print(model.summary())
     history = model.fit(tf.constant(data),
                 tf.constant(label),
-                epochs=1
+                epochs=5,validation_split=0.2
             )
     
     print(history.history)
@@ -85,6 +85,7 @@ print(nepCov19)
 
 max_len = 95
 tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM")
+tokenizer = tokenizer.train_new_from_iterator(nepCov19['train']['Sentences'],vocab_size=50000)
 print("Vocab Size",len(tokenizer))
 
 nepCov19 = nepCov19['train'].train_test_split(test_size=0.2)
@@ -198,16 +199,15 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
     1039/1039 [==============================] - 22s 21ms/step - loss: 0.1402 - acc: 0.9605 - val_loss: 0.5335 - val_acc: 0.8119
 
     ******Evaluations***********
-
-    260/260 [==============================] - 1s 2ms/step
-    F1-Score 0.811957794862897
-    Precision-Score 0.8124831706395869
-    Recall-Score 0.811913357400722
-    Accuracy-Score 0.811913357400722
+    
+    F1-Score 0.7618125631946366
+    Precision-Score 0.7624203603192438
+    Recall-Score 0.7616125150421179
+    Accuracy-Score 0.7616125150421179
     tf.Tensor(
-    [[2136  265  231]
-    [ 228 2504  284]
-    [ 174  381 2107]], shape=(3, 3), dtype=int32)
+    [[2026  333  273]
+    [ 270 2327  419]
+    [ 223  463 1976]], shape=(3, 3), dtype=int32)
     True Labels Onlys tf.Tensor(
     [[2632    0    0]
     [   0 3016    0]
