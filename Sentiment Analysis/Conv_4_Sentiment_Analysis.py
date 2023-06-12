@@ -19,12 +19,12 @@ def seed_everything(seed=0):
     np.random.seed(seed)
     tf.keras.utils.set_random_seed(rand_seed)
 
-rand_seed = 9
+rand_seed = 999
 seed_everything(rand_seed)
 
 use_pre_trained_embd_layer = True
 use_googletrans_aug_data = False
-save_model = True
+save_model = False
 
 def LabelEncoding(x):
     if x==0:
@@ -59,7 +59,8 @@ if use_googletrans_aug_data:
 #     nepCov19['train'] = datasets.concatenate_datasets([nepCov19['train'],agg_data])
 
 max_len = 95
-tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM")
+tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM") ### 50,000 tokens
+# tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/Covid-News-Headline-Generator") ### 30,000 tokens
 
 nepCov19 = nepCov19['train'].train_test_split(test_size=0.2)
 print("Dataset",nepCov19)
@@ -91,7 +92,7 @@ if use_pre_trained_embd_layer:
     embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
     
 try:
-    # raise("Let's Build New Model")
+    raise("Let's Build New Model")
     print("Loading saved model")
     model = tf.keras.models.load_model("saved_models/Conv_4_SA")
     print(model.summary())
@@ -99,26 +100,40 @@ except:
     model = Sequential()
     model.add(embd_layer)
     model.add(Conv1D(64,5,activation='relu'))
-    model.add(Dropout(0.3))
+    model.add(Dropout(0.2))
     model.add(MaxPool1D(3))
-    model.add(Conv1D(32,3,activation='relu'))
+    model.add(Conv1D(64,3,activation='relu'))
+    model.add(Dropout(0.2))
     model.add(MaxPool1D(2))
     model.add(Flatten())
     model.add(Dense(512,activation='relu'))
-    model.add(Dropout(0.4))
+    model.add(Dropout(0.2))
     model.add(Dense(128,activation='relu'))
-    model.add(Dropout(0.3))
+    model.add(Dropout(0.2))
     model.add(Dense(3,activation='sigmoid'))
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                    initial_learning_rate=0.00001,
+                    decay_steps=100000,                
+                    decay_rate=0.95,
+                    staircase=True
+                )
+            ),
         loss='categorical_crossentropy',
-        metrics=['acc',tf.keras.metrics.Precision()])
+        metrics=['acc'])
 
     print(model.summary())
 
     history = model.fit(tf.constant(train_input),
             tf.constant(train_labels),
-            epochs=10)
+            epochs=30,
+            validation_data=[tf.constant(test_input),tf.constant(test_labels)],
+            callbacks=[tf.keras.callbacks.EarlyStopping(
+                                    monitor='val_acc', patience=3,
+                                    verbose=1, mode='max',
+                                    restore_best_weights=True)
+                                  ])
 
     if save_model:
         print("Saving the model")
