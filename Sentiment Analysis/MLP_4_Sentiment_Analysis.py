@@ -48,7 +48,7 @@ def preTrainEmbedding(embeddinglayer,data,label):
     print(model.summary())
     history = model.fit(tf.constant(data),
                 tf.constant(label),
-                epochs=5,validation_split=0.2
+                epochs=5
             )
     
     print(history.history)
@@ -120,7 +120,7 @@ except:
     embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
     
     print("*** Pre-Training a Embedding Layer ****")
-    embd_layer = preTrainEmbedding(embd_layer,data=np.concatenate([train_input,test_input]),label=np.concatenate([train_labels,test_labels]))
+    embd_layer = preTrainEmbedding(embd_layer,data=[train_input,train_labels],label=[test_input,test_labels])
     
     model.add(embd_layer)
     model.add(Flatten())
