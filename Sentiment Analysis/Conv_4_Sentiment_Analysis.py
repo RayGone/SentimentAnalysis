@@ -22,7 +22,7 @@ def seed_everything(seed=0):
 rand_seed = 999
 seed_everything(rand_seed)
 
-use_pre_trained_embd_layer = True
+use_pre_trained_embd_layer = False
 use_googletrans_aug_data = False
 save_model = False
 
@@ -31,15 +31,15 @@ def preTrainEmbedding(embeddinglayer,data,label):
         embeddinglayer,
         Dropout(0.1),
         Flatten(),
-        Dense(512,activation='relu'),
-        Dropout(0.4),
+        # Dense(512,activation='relu'),
+        # Dropout(0.4),
         Dense(3,activation='sigmoid')
     ])
     
     model.compile(
         optimizer=tf.keras.optimizers.Adam(
             learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=0.00001,
+                    initial_learning_rate=0.0001,
                     decay_steps=100000,                
                     decay_rate=0.95,
                     staircase=True
@@ -50,8 +50,8 @@ def preTrainEmbedding(embeddinglayer,data,label):
     
     print(model.summary())
     history = model.fit(tf.constant(data),
-            tf.constant(label),
-            epochs=10,verbose=2
+                tf.constant(label),
+                epochs=1,verbose=2
             )
     
     print(history.history)
@@ -135,7 +135,7 @@ except:
     model.add(embd_layer)
     model.add(Conv1D(128,5,activation='relu'))
     model.add(Dropout(0.2))
-    model.add(MaxPool1D(4))
+    model.add(MaxPool1D(3))
     model.add(Conv1D(64,3,activation='relu'))
     model.add(Dropout(0.2))
     model.add(Flatten())
@@ -201,51 +201,26 @@ cmd.plot()
 
 print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_classes=3))
 """
--- Using NepCov19Tweets Dataset As it is --
-    BEST_RESULT: 
-        #### No Aug Data
-        F1-Score: 0.7022021185799427
-        Precision-Score: 0.700344004267401
-        Recall-Score: 0.7054518297236744
-        accuracy_Score: 0.7054518297236744
-        confusion matrix:
-                [[ 366  358  224]
-                [ 236 2304  432]
-                [ 217  505 2053]]
-        #### With googletrans Aug Data
-        F1-Score 0.7406357509162472
-        Precision-Score 0.7417297129889808
-        Recall-Score 0.7410655845005891
-        Accuracy-Score 0.7410655845005891
-        tf.Tensor(
-        [[1337  333  245]
-        [ 250 2337  375]
-        [ 243  532 1987]]
-    HyperParameters:        
-        rand_seed: 9 ## Seed for model weights and train_test data shuffle
-        epochs: 10
-        max_len: 95 ## maximum input length
-        embedding_size: 380
-        optimizer: tf.keras.optimizers.Adam(lr=0.00005)
-        loss: sparse_categorical_crossentropy
-        Conv1_l1: 
-            units: (64,5)
-            activation: relu
-        Dropout: 0.3
-        maxpool_l1: 3
-        Conv1_l2: 
-            units: (32,3)
-            activation: relu
-        maxpool_l1: 2
-        Dense_1: 
-            units: 512 
-            activation: relu
-        Dropout: 0.4
-        Dense_2: 
-            units: 128 
-            activation: relu
-        Dropout: 0.3
-        Dense_3: 
-            units: 3 
-            activation: sigmoid
+# ***********BEST_RESULT***************************** 
+# =================================================================
+# Total params: 13,635,587
+# Trainable params: 13,635,587
+# Non-trainable params: 0
+# _________________________________________________________________
+
+******Evaluations***********
+
+260/260 [==============================] - 1s 3ms/step
+F1-Score 0.7850441114637869
+Precision-Score 0.7853325864169118
+Recall-Score 0.7849578820697954
+Accuracy-Score 0.7849578820697954
+tf.Tensor(
+[[2047  303  233]
+ [ 259 2344  366]
+ [ 216  410 2132]], shape=(3, 3), dtype=int32)
+True Labels Onlys tf.Tensor(
+[[2583    0    0]
+ [   0 2969    0]
+ [   0    0 2758]], shape=(3, 3), dtype=int32)
 """

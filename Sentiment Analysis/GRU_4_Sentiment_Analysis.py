@@ -13,10 +13,10 @@ from transformers import PreTrainedTokenizerFast
 
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten,Embedding,Dense,Bidirectional,LSTM,Dropout
+from tensorflow.keras.layers import Flatten,Embedding,Dense,Bidirectional,GRU,Dropout
 import gc
 
-rand_seed = 9
+rand_seed = 999
 use_pre_trained_embd_layer = False
 use_googletrans_aug_data = False
 save_model = False
@@ -75,7 +75,7 @@ def preTrainEmbedding(embeddinglayer,data,label):
     print(model.summary())
     history = model.fit(tf.constant(data),
                 tf.constant(label),
-                epochs=1
+                epochs=1,verbose=2
             )
     
     print(history.history)
@@ -147,12 +147,12 @@ except:
         
     model = Sequential()
     model.add(embd_layer)
-    with tf.device('/device:CPU:0'):#For LSTM - CPU works better
-        # model.add(Bidirectional(LSTM(n_hidden*2,return_sequences=True)))
-        # model.add(Dropout(0.3))
-        model.add(Bidirectional(LSTM(n_hidden*2)))
-        model.add(Dropout(0.3))
-        model.add(Flatten())
+    # with tf.device('/device:CPU:0'):#For GRU - CPU works better
+    model.add(Bidirectional(GRU(n_hidden*2,return_sequences=True)))
+    model.add(Dropout(0.3))
+    model.add(Bidirectional(GRU(n_hidden*2)))
+    model.add(Dropout(0.3))
+    model.add(Flatten())
         
     model.add(Dense(n_hidden,activation='relu'))
     model.add(Dropout(0.25))
@@ -183,6 +183,7 @@ except:
                                     verbose=1, mode='max',
                                     restore_best_weights=True)
                                 ])
+    
     if save_model:
         print("Saving the model")
         model.save(os.path.join(os.getcwd(),"saved_models/LSTM_4_SA"))
@@ -220,31 +221,35 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
 '''
     *********** Best Result ***************
     =================================================================
-    Total params: 13,487,829
-    Trainable params: 13,487,829
+    Total params: 13,003,813
+    Trainable params: 13,003,813
     Non-trainable params: 0
     _________________________________________________________________
-    None
-    
+    Epoch 9/30
+    1039/1039 [==============================] - 45s 43ms/step - loss: 0.4637 - acc: 0.8303 - val_loss: 0.5928 - val_acc: 0.7720
+    Epoch 10/30
+    1039/1039 [==============================] - 46s 45ms/step - loss: 0.4398 - acc: 0.8404 - val_loss: 0.5908 - val_acc: 0.7712
+    Epoch 11/30
+    1039/1039 [==============================] - 48s 46ms/step - loss: 0.4171 - acc: 0.8510 - val_loss: 0.5979 - val_acc: 0.7716
     Epoch 12/30
-    1039/1039 [==============================] - 27s 26ms/step - loss: 0.4010 - acc: 0.8561 - val_loss: 0.6257 - val_acc: 0.7732
+    1038/1039 [============================>.] - ETA: 0s - loss: 0.3938 - acc: 0.8616Restoring model weights from the end of the best epoch: 9.
+    1039/1039 [==============================] - 47s 45ms/step - loss: 0.3936 - acc: 0.8617 - val_loss: 0.6050 - val_acc: 0.7705
+    Epoch 12: early stopping
 
 
     ******Evaluations***********
 
     260/260 [==============================] - 4s 13ms/step
-    F1-Score 0.773546122219416
-    Precision-Score 0.7750608440965745
-    Recall-Score 0.7731648616125151
-    accuracy_Score 0.7731648616125151
-    
+    F1-Score 0.7720589743286769
+    Precision-Score 0.7727716562784887
+    Recall-Score 0.7719614921780987
+    accuracy_Score 0.7719614921780987
     tf.Tensor(
-    [[2014  365  253]
-    [ 229 2361  426]
-    [ 188  424 2050]], shape=(3, 3), dtype=int32)
-    
+    [[2018  289  276]
+    [ 282 2222  465]
+    [ 200  383 2175]], shape=(3, 3), dtype=int32)
     True Labels Onlys tf.Tensor(
-    [[2632    0    0]
-    [   0 3016    0]
-    [   0    0 2662]], shape=(3, 3), dtype=int32)
+    [[2583    0    0]
+    [   0 2969    0]
+    [   0    0 2758]], shape=(3, 3), dtype=int32)
 '''
