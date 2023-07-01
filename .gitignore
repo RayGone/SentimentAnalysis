@@ -5,3 +5,4 @@ saved_models
 .env
 *__pycache__
 sentence_embeddings
+NLTK/NLTK/*
