@@ -11,9 +11,9 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 #### https://annapurnapost.prixa.net/search/?q=कोभिड&page=2 - https://annapurnapost.com/search/?q=कोरोना&page=3
 #### https://www.ratopati.com/search?query=कोभिड&page=2 - https://www.ratopati.com/search?query=कोरोना&page=2
 
-def crawlEkantipur(save_output=True):
+def crawlEkantipur(save_output=True,category='health'):
     print("\n\n##############Crawling Ekantipur###################\n\n")
-    api_point = "https://ekantipur.com/health/"+"{y}/{m}/{d}"#.format(y=2021,m=11,d=28)
+    api_point = "https://ekantipur.com/{category}/".format(category)+"{y}/{m}/{d}"#.format(y=2021,m=11,d=28)
     data = pd.DataFrame(columns=['text'])
     
     year = 2020

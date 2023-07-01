@@ -3,3 +3,5 @@ saved_models
 .ipynb_checkpoints
 *.txt
 .env
+*__pycache__
+sentence_embeddings

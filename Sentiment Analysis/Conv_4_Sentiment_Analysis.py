@@ -17,6 +17,7 @@ def seed_everything(seed=0):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
+    tf.random.set_seed(seed)
     tf.keras.utils.set_random_seed(rand_seed)
 
 rand_seed = 999
@@ -26,13 +27,13 @@ use_pre_trained_embd_layer = False
 use_googletrans_aug_data = False
 save_model = False
 
-def preTrainEmbedding(embeddinglayer,data,label):
+def preTrainEmbedding(embeddinglayer,train=[],val=[]):
     model = Sequential([
         embeddinglayer,
         Dropout(0.1),
         Flatten(),
-        # Dense(512,activation='relu'),
-        # Dropout(0.4),
+        Dense(64,activation='relu'),
+        Dropout(0.3),
         Dense(3,activation='sigmoid')
     ])
     
@@ -49,10 +50,11 @@ def preTrainEmbedding(embeddinglayer,data,label):
         metrics=['acc'])
     
     print(model.summary())
-    history = model.fit(tf.constant(data),
-                tf.constant(label),
-                epochs=1,verbose=2
-            )
+    history = model.fit(tf.constant(train[0]),
+                          tf.constant(train[1]),
+                          epochs=5,verbose=1,
+                          validation_data=val
+                      )
     
     print(history.history)
     return embeddinglayer
@@ -90,15 +92,24 @@ if use_googletrans_aug_data:
 #     nepCov19['train'] = datasets.concatenate_datasets([nepCov19['train'],agg_data])
 
 max_len = 95
-tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM") ### 50,000 tokens
-# tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/Covid-News-Headline-Generator") ### 30,000 tokens
+# tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM") ### 50,000 tokens
+tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/Covid-News-Headline-Generator") ### 30,000 tokens
 
 nepCov19 = nepCov19['train'].train_test_split(test_size=0.2)
 print("Dataset",nepCov19)
+
+train_input = tokenizer(
+                    nepCov19['train']['Sentences']
+                ).input_ids
+
+test_input = tokenizer(
+                nepCov19['test']['Sentences']
+                ).input_ids
+
+# max_len = max([max([len(x) for x in tokenizer(nepCov19['train']['Sentences']).input_ids]),max([len(x) for x in tokenizer(nepCov19['test']['Sentences']).input_ids])]) + 10
+
 train_input = pad_sequences(
-                        tokenizer(
-                            nepCov19['train']['Sentences']
-                            ).input_ids,
+                        train_input,
                         maxlen = max_len,
                         padding='post',
                         value=tokenizer.pad_token_id
@@ -106,9 +117,7 @@ train_input = pad_sequences(
 train_labels = [LabelEncoding(x) for x in nepCov19['train']['Sentiment']]
 
 test_input = pad_sequences(
-                        tokenizer(
-                            nepCov19['test']['Sentences']
-                            ).input_ids,
+                        test_input,
                         maxlen = max_len,
                         padding='post',
                         value=tokenizer.pad_token_id
@@ -123,7 +132,9 @@ if use_pre_trained_embd_layer:
     embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
 else:
     print("*** Pre-Training a Embedding Layer ****")
-    embd_layer = preTrainEmbedding(embd_layer,data=np.concatenate([train_input,test_input]),label=np.concatenate([train_labels,test_labels]))
+    embd_layer = preTrainEmbedding(embd_layer,
+                                train=[tf.constant(train_input),tf.constant(train_labels)],
+                                val=[tf.constant(test_input),tf.constant(test_labels)])
     
 try:
     raise("Let's Build New Model")
@@ -134,15 +145,16 @@ except:
     model = Sequential()
     model.add(embd_layer)
     model.add(Conv1D(128,5,activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dropout(0.3))
     model.add(MaxPool1D(3))
     model.add(Conv1D(64,3,activation='relu'))
-    model.add(Dropout(0.2))
-    model.add(Flatten())
-    model.add(Dense(1024,activation='relu'))
     model.add(Dropout(0.3))
-    model.add(Dense(128,activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(MaxPool1D(2))
+    model.add(Flatten())
+    model.add(Dense(512,activation='relu'))
+    model.add(Dropout(0.3))
+    # model.add(Dense(128,activation='relu'))
+    # model.add(Dropout(0.2))
     model.add(Dense(3,activation='sigmoid'))
     model.compile(
         optimizer=tf.keras.optimizers.Adam(
@@ -203,22 +215,22 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
 """
 # ***********BEST_RESULT***************************** 
 # =================================================================
-# Total params: 13,635,587
-# Trainable params: 13,635,587
-# Non-trainable params: 0
+Total params: 21,235,587
+Trainable params: 21,235,587
+Non-trainable params: 0
 # _________________________________________________________________
 
 ******Evaluations***********
 
 260/260 [==============================] - 1s 3ms/step
-F1-Score 0.7850441114637869
-Precision-Score 0.7853325864169118
-Recall-Score 0.7849578820697954
-Accuracy-Score 0.7849578820697954
+F1-Score 0.8364888987329185
+Precision-Score 0.8369815220058648
+Recall-Score 0.8364620938628159
+Accuracy-Score 0.8364620938628159
 tf.Tensor(
-[[2047  303  233]
- [ 259 2344  366]
- [ 216  410 2132]], shape=(3, 3), dtype=int32)
+[[2190  235  158]
+ [ 185 2520  264]
+ [ 173  344 2241]], shape=(3, 3), dtype=int32)
 True Labels Onlys tf.Tensor(
 [[2583    0    0]
  [   0 2969    0]
