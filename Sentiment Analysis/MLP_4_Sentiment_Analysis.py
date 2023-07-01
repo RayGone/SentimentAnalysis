@@ -19,8 +19,42 @@ def seed_everything(seed=0):
     tf.keras.utils.set_random_seed(rand_seed)
 
 use_googletrans_aug_data = False
-rand_seed = 9
+rand_seed = 99
 seed_everything(rand_seed)
+
+
+def preTrainEmbedding(embeddinglayer,data,label):
+    model = Sequential([
+        embeddinglayer,
+        Dropout(0.1),
+        Flatten(),
+        # Dense(512,activation='relu'),
+        # Dropout(0.4),
+        Dense(3,activation='sigmoid')
+    ])
+    
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                    initial_learning_rate=0.0001,
+                    decay_steps=100000,                
+                    decay_rate=0.95,
+                    staircase=True
+                )
+            ),
+        loss='categorical_crossentropy',
+        metrics=['acc'])
+    
+    print(model.summary())
+    history = model.fit(tf.constant(data),
+                tf.constant(label),
+                epochs=5
+            )
+    
+    print(history.history)
+    return embeddinglayer
+
+### -----------\\//------------ ###
 
 def LabelEncoding(x):
     if x == -1:
@@ -51,6 +85,7 @@ print(nepCov19)
 
 max_len = 95
 tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/GPT2-Nepali-Casual-LM")
+tokenizer = tokenizer.train_new_from_iterator(nepCov19['train']['Sentences'],vocab_size=50000)
 print("Vocab Size",len(tokenizer))
 
 nepCov19 = nepCov19['train'].train_test_split(test_size=0.2)
@@ -83,6 +118,10 @@ try:
 except:
     model = Sequential()
     embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
+    
+    print("*** Pre-Training a Embedding Layer ****")
+    embd_layer = preTrainEmbedding(embd_layer,data=[train_input,train_labels],label=[test_input,test_labels])
+    
     model.add(embd_layer)
     model.add(Flatten())
     model.add(Dense(256,activation='relu'))
@@ -92,17 +131,28 @@ except:
     model.add(Dense(3,activation='sigmoid'))
     
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.00005),
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
+                    initial_learning_rate=0.00001,
+                    decay_steps=100000,                
+                    decay_rate=0.95,
+                    staircase=True
+                )
+            ),
         loss='categorical_crossentropy',
-        metrics=['acc',tf.keras.metrics.Precision()])
-
+        metrics=['acc'])
+    
     print(model.summary())
-
-
-    print("Training The Model")
+    
     history = model.fit(tf.constant(train_input),
             tf.constant(train_labels),
-            epochs=5)#, validation_split=0.1)
+            epochs=30,
+            validation_data=[tf.constant(test_input),tf.constant(test_labels)],
+            callbacks=[tf.keras.callbacks.EarlyStopping(
+                                monitor='val_acc', patience=3,
+                                verbose=1, mode='max',
+                                restore_best_weights=True)
+                            ])
 
     # model.save("saved_models/MLP_4_SA")
     
@@ -140,40 +190,26 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
 
 """
     RESULT:  
-        #### No Aug Data
-        F1-Score 0.6868384368625976
-        Precision-Score 0.6839599853659085
-        Recall-Score 0.7035100821508589
-        Accuracy-Score 0.7035100821508589
-        confusion matrix:
-            [[ 207  417  325]
-            [ 134 2346  448]
-            [ 122  539 2157]]
-        Epoch 5/5
-        837/837 [==============================] - 19s 23ms/step - loss: 0.4255 - acc: 0.8412 - precision: 0.7573
-        
-        #### With googletrans Aug data
-        F1-Score 0.7364478486255656
-        Precision-Score 0.7374669280946146
-        Recall-Score 0.7364838329624296
-        Accuracy-Score 0.7364838329624296
-        confusion matrix:
-            [[1418  273  224]
-             [ 314 2255  393]
-             [ 281  528 1953]]
-        Epoch 5/5
-        955/955 [==============================] - 22s 23ms/step - loss: 0.2952 - acc: 0.9049 - precision: 0.7841
-    HyperParameters:        
-        rand_seed = 9 ## Seed for model weights and train_test data shuffle
-        epochs = 5
-        max_len = 95 ## maximum input length
-        embedding_size = 380
-        optimizer = tf.keras.optimizers.Adam(lr=0.000099)
-        metrics = ['acc','precision']
-        loss = sparse_categorical_crossentropy
-        Dense_1 = 256, activation = relu
-        dropout = 0.4
-        Dense_2 = 128, activation = relu
-        dropout = 0.2
-        Dense_3 = 3, activation = sigmoid
+    =================================================================
+    Total params: 28,275,139
+    Trainable params: 28,275,139
+    Non-trainable params: 0
+    _________________________________________________________________
+    Epoch 18/30
+    1039/1039 [==============================] - 22s 21ms/step - loss: 0.1402 - acc: 0.9605 - val_loss: 0.5335 - val_acc: 0.8119
+
+    ******Evaluations***********
+    
+    F1-Score 0.7618125631946366
+    Precision-Score 0.7624203603192438
+    Recall-Score 0.7616125150421179
+    Accuracy-Score 0.7616125150421179
+    tf.Tensor(
+    [[2026  333  273]
+    [ 270 2327  419]
+    [ 223  463 1976]], shape=(3, 3), dtype=int32)
+    True Labels Onlys tf.Tensor(
+    [[2632    0    0]
+    [   0 3016    0]
+    [   0    0 2662]], shape=(3, 3), dtype=int32)
 """
