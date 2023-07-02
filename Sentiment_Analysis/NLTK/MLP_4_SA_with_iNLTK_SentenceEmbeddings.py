@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten,Embedding,Dense,Dropout,Softmax
 
-from Embeddings import  getWordEmbeddings
+from package.Embeddings import getSentenceEmbeddings
 
 def seed_everything(seed=0):
     random.seed(seed)
@@ -33,23 +33,21 @@ def LabelEncoding(x):
         # return 1
         return [0,1,0]
     
-if os.path.exists("NLTK/word_embeddings"):
+if os.path.exists("NLTK/sentence_embeddings"):
     print("loading from disk")
-    data = datasets.Dataset.load_from_disk("NLTK/word_embeddings")
+    data = datasets.Dataset.load_from_disk("NLTK/sentence_embeddings")
 else:   
     print("getSentenceEmbeddings()")
-    data = getWordEmbeddings()
-    data = datasets.Dataset.from_pandas(data).shuffle(rand_seed)
-    data.save_to_disk("NLTK/word_embeddings")
+    data = getSentenceEmbeddings()
+    data = datasets.Dataset.from_pandas(data)#.shuffle(rand_seed)
+    data.save_to_disk("NLTK/sentence_embeddings")
 
 data = data.shuffle(rand_seed).train_test_split(test_size=0.2)
 print(data)
 
 max_len = len(data['train'][0]['sent_embd'])
 
-train_input = data['train']['sent_embd']
 train_labels = [LabelEncoding(x) for x in data['train']['label']]
-test_input = data['test']['sent_embd']
 test_labels = [LabelEncoding(x) for x in data['test']['label']]
 
 model = Sequential()
@@ -64,7 +62,7 @@ model.add(Dense(3,activation='sigmoid'))
 model.compile(
     optimizer=tf.keras.optimizers.Adam(
         learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=0.00001,
+                initial_learning_rate=0.0001,
                 decay_steps=100,                
                 decay_rate=0.95,
                 staircase=True
@@ -75,10 +73,10 @@ model.compile(
 
 print(model.summary())
 
-history = model.fit(tf.constant(train_input),
+history = model.fit(tf.constant(data['train']['sent_embd']),
         tf.constant(train_labels),
         epochs=100,
-        validation_data=(tf.constant(test_input),tf.constant(test_labels)),
+        validation_data=(tf.constant(data['test']['sent_embd']),tf.constant(test_labels)),
         callbacks=[tf.keras.callbacks.EarlyStopping(
                             monitor='val_acc', patience=3,
                             verbose=1, mode='max',
@@ -95,7 +93,7 @@ print("l\n\n******Evaluations***********\n")
 pred_labels = [np.argmax(x) for x in 
         tf.nn.softmax(
             model.predict(
-                x=tf.constant(test_input)
+                x=tf.constant(data['test']['sent_embd'])
             )
         )
     ]
