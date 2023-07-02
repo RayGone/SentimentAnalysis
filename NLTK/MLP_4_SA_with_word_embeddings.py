@@ -3,13 +3,14 @@
 import os
 import random
 import numpy as np
+import pandas as pd
 import datasets
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten,Embedding,Dense,Dropout,Softmax
 
-from Embeddings import  getWordEmbeddings
+from package.DataGenerator import DataGenerator
 
 def seed_everything(seed=0):
     random.seed(seed)
@@ -19,53 +20,31 @@ def seed_everything(seed=0):
     
 rand_seed = 99
 seed_everything(rand_seed)
-
-### -----------\\//------------ ###
-
-def LabelEncoding(x):
-    if x == -1:
-        # return 2
-        return [0,0,1]
-    if x == 0:
-        # return 0
-        return [1,0,0]
-    if x == 1:
-        # return 1
-        return [0,1,0]
     
-if os.path.exists("NLTK/word_embeddings"):
-    print("loading from disk")
-    data = datasets.Dataset.load_from_disk("NLTK/word_embeddings")
-else:   
-    print("getSentenceEmbeddings()")
-    data = getWordEmbeddings()
-    data = datasets.Dataset.from_pandas(data).shuffle(rand_seed)
-    data.save_to_disk("NLTK/word_embeddings")
+data = datasets.load_dataset("raygx/NepCov19TweetsPlus")
+data = data.rename_column(original_column_name='Sentences',new_column_name='text')
+data = data.rename_column(original_column_name='Sentiment',new_column_name='label')
+data = data['train'].train_test_split(test_size=0.2) 
 
-data = data.shuffle(rand_seed).train_test_split(test_size=0.2)
-print(data)
+train_gen = DataGenerator(data['train'],max_token_len=110)
+test_gen= DataGenerator(data['test'],max_token_len=110)
 
-max_len = len(data['train'][0]['sent_embd'])
-
-train_input = data['train']['sent_embd']
-train_labels = [LabelEncoding(x) for x in data['train']['label']]
-test_input = data['test']['sent_embd']
-test_labels = [LabelEncoding(x) for x in data['test']['label']]
 
 model = Sequential()
-model.add(tf.keras.layers.InputLayer(input_shape=(max_len,)))
-model.add(Dense(1024,activation='relu'))
+model.add(tf.keras.layers.InputLayer(input_shape=(110,400)))
+model.add(Flatten())
+model.add(Dense(512,activation='relu'))
 model.add(Dropout(0.3))
-model.add(Dense(256,activation='relu'))
-model.add(Dense(128,activation='relu'))
+model.add(Dense(512,activation='relu'))
+# model.add(Dense(128,activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(3,activation='sigmoid'))
 
 model.compile(
     optimizer=tf.keras.optimizers.Adam(
         learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=0.00001,
-                decay_steps=100,                
+                initial_learning_rate=0.0001,
+                decay_steps=100000,                
                 decay_rate=0.95,
                 staircase=True
             )
@@ -75,10 +54,9 @@ model.compile(
 
 print(model.summary())
 
-history = model.fit(tf.constant(train_input),
-        tf.constant(train_labels),
+history = model.fit(train_gen,
         epochs=100,
-        validation_data=(tf.constant(test_input),tf.constant(test_labels)),
+        validation_data=test_gen,
         callbacks=[tf.keras.callbacks.EarlyStopping(
                             monitor='val_acc', patience=3,
                             verbose=1, mode='max',

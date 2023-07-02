@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten,Embedding,Dense,Dropout,Softmax
 
-from Embeddings import getSentenceEmbeddings
+from package.Embeddings import getSentenceEmbeddings
 
 def seed_everything(seed=0):
     random.seed(seed)
@@ -39,7 +39,7 @@ if os.path.exists("NLTK/sentence_embeddings"):
 else:   
     print("getSentenceEmbeddings()")
     data = getSentenceEmbeddings()
-    data = datasets.Dataset.from_pandas(data).shuffle(rand_seed)
+    data = datasets.Dataset.from_pandas(data)#.shuffle(rand_seed)
     data.save_to_disk("NLTK/sentence_embeddings")
 
 data = data.shuffle(rand_seed).train_test_split(test_size=0.2)
