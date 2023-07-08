@@ -26,6 +26,7 @@ def seed_everything(seed=0):
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     tf.keras.utils.set_random_seed(rand_seed)
+    tf.random.set_seed(seed) # tensorflow
     
 seed_everything(rand_seed)
 

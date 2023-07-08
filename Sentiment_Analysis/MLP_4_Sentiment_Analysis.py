@@ -17,6 +17,7 @@ def seed_everything(seed=0):
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     tf.keras.utils.set_random_seed(rand_seed)
+    tf.random.set_seed(seed) # tensorflow
 
 use_googletrans_aug_data = False
 rand_seed = 99
