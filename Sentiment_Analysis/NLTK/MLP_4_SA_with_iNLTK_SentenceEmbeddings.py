@@ -15,7 +15,8 @@ def seed_everything(seed=0):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
-    # tf.keras.utils.set_random_seed(rand_seed)
+    tf.keras.utils.set_random_seed(rand_seed)
+    tf.random.set_seed(seed) # tensorflow
     
 rand_seed = 99
 seed_everything(rand_seed)
@@ -33,9 +34,9 @@ def LabelEncoding(x):
         # return 1
         return [0,1,0]
     
-if os.path.exists("NLTK/sentence_embeddings"):
+if os.path.exists("Sentiment_Analysis/NLTK/sentence_embeddings"):
     print("loading from disk")
-    data = datasets.Dataset.load_from_disk("NLTK/sentence_embeddings")
+    data = datasets.Dataset.load_from_disk("Sentiment_Analysis/NLTK/sentence_embeddings")
 else:   
     print("getSentenceEmbeddings()")
     data = getSentenceEmbeddings()
@@ -62,8 +63,8 @@ model.add(Dense(3,activation='sigmoid'))
 model.compile(
     optimizer=tf.keras.optimizers.Adam(
         learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=0.0001,
-                decay_steps=100,                
+                initial_learning_rate=0.001,
+                decay_steps=10000,                
                 decay_rate=0.95,
                 staircase=True
             )
@@ -118,27 +119,23 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
 # print("True Labels Onlys",tf.math.confusion_matrix(labels,labels,num_classes=3))
 
 """
-    RESULT:  
-    =================================================================
-    Total params: 28,275,139
-    Trainable params: 28,275,139
-    Non-trainable params: 0
-    _________________________________________________________________
-    Epoch 18/30
-    1039/1039 [==============================] - 22s 21ms/step - loss: 0.1402 - acc: 0.9605 - val_loss: 0.5335 - val_acc: 0.8119
+RESULT:  
+=================================================================
+Total params: 706,307
+Trainable params: 706,307
+Non-trainable params: 0
+_________________________________________________________________
+Epoch 5/100
+1039/1039 [==============================] - 3s 3ms/step - loss: 0.5436 - acc: 0.7706 - val_loss: 0.7814 - val_acc: 0.6732
 
-    ******Evaluations***********
-    
-    F1-Score 0.7618125631946366
-    Precision-Score 0.7624203603192438
-    Recall-Score 0.7616125150421179
-    Accuracy-Score 0.7616125150421179
-    tf.Tensor(
-    [[2026  333  273]
-    [ 270 2327  419]
-    [ 223  463 1976]], shape=(3, 3), dtype=int32)
-    True Labels Onlys tf.Tensor(
-    [[2632    0    0]
-    [   0 3016    0]
-    [   0    0 2662]], shape=(3, 3), dtype=int32)
+******Evaluations***********
+
+F1-Score 0.6729567546716254
+Precision-Score 0.6791754694996459
+Recall-Score 0.6731648616125151
+Accuracy-Score 0.6731648616125151
+tf.Tensor(
+[[1700  630  320]
+ [ 312 2219  457]
+ [ 299  698 1675]], shape=(3, 3), dtype=int32)
 """
