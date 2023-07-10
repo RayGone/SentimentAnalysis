@@ -18,12 +18,4 @@ class BERTEmbedding(tf.keras.layers.Layer):
     self.trainable=False
 
   def call(self, x):
-    if self.tokenizer:
-      if x.shape[0] != None:
-        x = [str(i) for i in x]
-      else:
-        x = str(x)
-      return self.embedding(self.tokenizer(x,padding=self.padding,truncation=self.truncation,max_length=self.max_token,return_tensors='tf'))[0]
-    
-    else:
-        return self.embedding(x)[0]
+    return self.embedding(self.tokenizer(x,padding=self.padding,truncation=self.truncation,max_length=self.max_token,return_tensors='tf'))[1]
