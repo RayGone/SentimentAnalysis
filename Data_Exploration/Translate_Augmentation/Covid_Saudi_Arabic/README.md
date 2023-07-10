@@ -1,0 +1,2 @@
+### This Data is downloaded from [kaggle](https://www.kaggle.com/datasets/arwaalqarni/sentiment-analysis-of-covid-19-in-saudia-arabia)
+> The intended purpose is to translate this Arabic dataset to Nepali and perform Sentiment Analysis using Transformers
