@@ -5,7 +5,7 @@
     The Model is trained in MLP_4_Sentiment_Analysis.py
     The Model is stored in saved_models/MLP_4_SA
     
-    The output is saved in data_dump/MLP_4_SA_neutral_labeled_news.csv
+    The output is saved in Model_Outputs/MLP_4_SA_neutral_labeled_news.csv
 """
 
 import os
@@ -49,7 +49,7 @@ label_index = [x for x in range(data.shape[0]) if pred_labels[x] == 0]
 result = data.loc[label_index]
 result.index = range(result.shape[0])
 result.drop(['index'],axis=1,inplace=True)
-result.to_csv("data_dump/MLP_4_SA_neutral_labeled_news.csv")
+result.to_csv("Model_Outputs/MLP_4_SA_neutral_labeled_news.csv")
 
 
 # import seaborn
