@@ -27,14 +27,16 @@ class Transformer(tf.keras.Model):
   def call(self, x):
     # `x` is token-IDs shape: (batch, seq_len)
     x = self.pos_embedding(x)  # Shape `(batch_size, seq_len, d_model)`.
-
     # Add dropout.
     x = self.dropout(x)
-    x = self.encoder(x)    
-    x = self.out(x)
+    ## Encoder
+    x = self.encoder(x)     # Shape `(batch_size, seq_len, d_model)`.
+    ## Dense
+    x = self.out(x)         # Shape `(batch_size, seq_len, d_model)`.
     self.last_hidden_state = x
-    self.pooled_state = tf.reduce_logsumexp(x,axis=1) * 0.1
-    return self.head(self.pooled_state)  # Shape `(batch_size, seq_len, d_model)`.
+    ## Pooling
+    self.pooled_state = tf.reduce_logsumexp(x,axis=1) * 0.1 # Shape `(batch_size, d_model)`.
+    return self.head(self.pooled_state)  # Shape `(batch_size, seq_len, num_class)`.
 
 if __name__ == '__main__':
     import numpy as np
