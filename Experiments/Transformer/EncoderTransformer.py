@@ -30,11 +30,10 @@ class Transformer(tf.keras.Model):
 
     # Add dropout.
     x = self.dropout(x)
-    x = self.encoder(x)
-    
+    x = self.encoder(x)    
+    x = self.out(x)
     self.last_hidden_state = x
-    x = tf.reduce_logsumexp(x,axis=1) * 0.1
-    self.pooled_state = self.out(x)
+    self.pooled_state = tf.reduce_logsumexp(x,axis=1) * 0.1
     return self.head(self.pooled_state)  # Shape `(batch_size, seq_len, d_model)`.
 
 if __name__ == '__main__':
