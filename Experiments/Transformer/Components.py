@@ -159,12 +159,20 @@ class GSA_EncoderLayer(tf.keras.layers.Layer):
     x = self.ffn(x)
     return x
 
+"""_summary_
+
+  attn_stack_type: defines how to arrange LSA and GSA; defaults to 'add' [(LSA+GSA),...]; 
+                    another option is 'stack': one after another [GSA,LSA,.....,GSA+LSA]
+"""
 class Encoder(tf.keras.layers.Layer):
-  def __init__(self, *, num_layers, d_model, GSA_num_heads,LSA_num_window,LSA_num_heads,dff, dropout_rate=0.1):
+  def __init__(self, *, num_layers, d_model, GSA_num_heads,LSA_num_window,LSA_num_heads,dff,attn_stack_type='add', dropout_rate=0.1):
     super().__init__()
     
     self.d_model = d_model
     self.num_layers = num_layers if num_layers else 1
+    self.attn_stack_type = attn_stack_type ##By Default Add
+    if self.attn_stack_type not in ['add','stack']:
+      self.attn_stack_type = 'add'
 
     self.lsa_enc_layers = [
                             LSA_EncoderLayer(d_model=d_model,
@@ -186,9 +194,18 @@ class Encoder(tf.keras.layers.Layer):
     self.layer_norm = tf.keras.layers.LayerNormalization()
     self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
-  def call(self, x):        
-    for i in range(self.num_layers):
-        x = self.layer_norm(self.add([self.lsa_enc_layers[i](x),self.gsa_enc_layers[i](x)]))    
+  def call(self, x): 
+    if self.attn_stack_type == 'add' or self.num_layers==1:      
+      for i in range(self.num_layers):
+          x = self.layer_norm(self.add([self.lsa_enc_layers[i](x),self.gsa_enc_layers[i](x)]))  
+    if self.attn_stack_type == 'stack':
+      for i in range(self.num_layers - 1):
+        x = self.lsa_enc_layers[i](
+              self.gsa_enc_layers[i](x)
+            )
+        
+        x = self.layer_norm(self.add([self.lsa_enc_layers[-1](x),self.gsa_enc_layers[-1](x)]))  
+        
     return self.dropout(x)
 
 

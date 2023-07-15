@@ -1,9 +1,14 @@
 import tensorflow as tf
 from Components import PositionalEmbedding, Encoder
 
+"""_summary_
+
+  attn_stack_type: defines how to arrange LSA and GSA; defaults to 'add' [(LSA+GSA),...]; 
+                    another option is 'stack': one after another [GSA,LSA,.....,(LSA+GSA)]
+"""
 class Transformer(tf.keras.Model):
   def __init__(self, *, num_layers, d_model, GSA_num_heads,LSA_num_window,LSA_num_heads,
-               dff, vocab_size,num_class=2, dropout_rate=0.1):
+               dff, vocab_size,num_class=2,attn_stack_type, dropout_rate=0.1):
     super().__init__()
 
     self.d_model = d_model
@@ -13,11 +18,11 @@ class Transformer(tf.keras.Model):
 
     self.encoder = Encoder(num_layers=num_layers,d_model=d_model,GSA_num_heads=GSA_num_heads,
                            LSA_num_window=LSA_num_window,LSA_num_heads=LSA_num_heads,
-                           dff=dff,dropout_rate=dropout_rate)
+                           dff=dff,attn_stack_type=attn_stack_type,dropout_rate=dropout_rate)
     
     self.dropout = tf.keras.layers.Dropout(dropout_rate)
     self.out = tf.keras.layers.Dense(d_model,activation='gelu',name='feature')
-    self.head = tf.keras.layers.Dense(num_class,activation='sigmoid',name='classification_head')
+    self.head = tf.keras.layers.Dense(num_class,activation='softmax',name='classification_head')
 
   def call(self, x):
     # `x` is token-IDs shape: (batch, seq_len)
@@ -28,7 +33,7 @@ class Transformer(tf.keras.Model):
     x = self.encoder(x)
     
     self.last_hidden_state = x
-    x = tf.reduce_logsumexp(self.dropout(x),axis=1) * 0.1
+    x = tf.reduce_logsumexp(x,axis=1) * 0.1
     self.pooled_state = self.out(x)
     return self.head(self.pooled_state)  # Shape `(batch_size, seq_len, d_model)`.
 
