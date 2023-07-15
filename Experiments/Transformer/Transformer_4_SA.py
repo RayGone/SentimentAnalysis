@@ -38,7 +38,7 @@ def LabelEncoding(x):
     
 nepCov19 = load_dataset("raygx/NepCov19TweetsPlus").shuffle(rand_seed)  
 
-max_len = 128
+max_len = 128 ## actual max token for the dataset is <95
 tokenizer = PreTrainedTokenizerFast.from_pretrained("raygx/BERT_Nepali_Tokenizer")
 print("Vocab Size",len(tokenizer))
 
@@ -66,8 +66,8 @@ test_labels = [LabelEncoding(x) for x in nepCov19['test']['Sentiment']]
 
 gc.collect()
 
-model = Transformer(num_layers=2,d_model=256,GSA_num_heads=8,
-                    LSA_num_heads=2,LSA_num_window=4,dff=512,
+model = Transformer(num_layers=1,d_model=384,GSA_num_heads=8,
+                    LSA_num_heads=2,LSA_num_window=4,dff=640,
                     vocab_size=len(tokenizer),num_class=3)
 
 model.compile(
@@ -127,46 +127,23 @@ cmd.plot()
 print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_classes=3))
 # print("True Labels Onlys",tf.math.confusion_matrix(labels,labels,num_classes=3))
 
-""" #1 - NepCov19TweetsPlus
-    Experiment: Transformer(num_layers=1,d_model=256,GSA_num_heads=8,
-                    LSA_num_heads=2,LSA_num_window=4,dff=512,
-                    vocab_size=len(tokenizer),num_class=3)
-                    
-    Result: 
-        Epoch 11/30
-        1039/1039 [==============================] - 87s 83ms/step - loss: 0.3976 - acc: 0.8535 - val_loss: 0.6484 - val_acc: 0.7557
-        
-        F1-Score 0.7559914005465729
-        Precision-Score 0.7620842599277837
-        Recall-Score 0.7556866048862679
-        Accuracy-Score 0.7556866048862679
-        tf.Tensor(
-        [[1808  457  290]
-        [ 179 2422  398]
-        [ 167  539 2049]], shape=(3, 3), dtype=int32)
-        True Labels Onlys tf.Tensor(
-        [[2555    0    0]
-        [   0 2999    0]
-        [   0    0 2755]], shape=(3, 3), dtype=int32)
-"""
-
-""" #2 - NepCov19TweetsPlus
-    Experiment: Transformer(num_layers=2,d_model=256,GSA_num_heads=8,
-                    LSA_num_heads=2,LSA_num_window=4,dff=512,
+""" #3 - NepCov19TweetsPlus
+    Experiment: Transformer(num_layers=1,d_model=384,GSA_num_heads=8,
+                    LSA_num_heads=2,LSA_num_window=4,dff=640,
                     vocab_size=len(tokenizer),num_class=3)
                     
     Result: 
         Epoch 9/30
-        1039/1039 [==============================] - 156s 150ms/step - loss: 0.4298 - acc: 0.8374 - val_loss: 0.6284 - val_acc: 0.7594
+        1039/1039 [==============================] - 156s 150ms/step - loss: 0.3763 - acc: 0.8618 - val_loss: 0.6326 - val_acc: 0.7600
         
-        F1-Score 0.7599534415196874
-        Precision-Score 0.7685185606343746
-        Recall-Score 0.7594174990973643
-        Accuracy-Score 0.7594174990973643
+        F1-Score 0.7602114246413237
+        Precision-Score 0.7624000793353243
+        Recall-Score 0.7600192562281863
+        Accuracy-Score 0.7600192562281863
         tf.Tensor(
-        [[1793  484  278]
-        [ 147 2444  408]
-        [ 138  544 2073]], shape=(3, 3), dtype=int32)
+        [[1868  388  299]
+        [ 225 2355  419]
+        [ 203  460 2092]], shape=(3, 3), dtype=int32)
         True Labels Onlys tf.Tensor(
         [[2555    0    0]
         [   0 2999    0]
