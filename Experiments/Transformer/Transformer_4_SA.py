@@ -66,9 +66,9 @@ test_labels = [LabelEncoding(x) for x in nepCov19['test']['Sentiment']]
 
 gc.collect()
 
-model = Transformer(num_layers=1,d_model=384,GSA_num_heads=8,
-                    LSA_num_heads=2,LSA_num_window=4,dff=640,
-                    vocab_size=len(tokenizer),num_class=3)
+model = Transformer(num_layers=2,d_model=384,GSA_num_heads=4,
+                    LSA_num_heads=2,LSA_num_window=4,dff=512,
+                    vocab_size=len(tokenizer),num_class=3, attn_stack_type='stack')
 
 model.compile(
     optimizer=tf.keras.optimizers.Adam(
@@ -127,23 +127,23 @@ cmd.plot()
 print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_classes=3))
 # print("True Labels Onlys",tf.math.confusion_matrix(labels,labels,num_classes=3))
 
-""" #3 - NepCov19TweetsPlus
-    Experiment: Transformer(num_layers=1,d_model=384,GSA_num_heads=8,
-                    LSA_num_heads=2,LSA_num_window=4,dff=640,
-                    vocab_size=len(tokenizer),num_class=3)
+""" #4 - NepCov19TweetsPlus
+    Experiment: Transformer(num_layers=2,d_model=384,GSA_num_heads=4,
+                    LSA_num_heads=2,LSA_num_window=4,dff=512,
+                    vocab_size=len(tokenizer),num_class=3, attn_stack_type='stack')
                     
-    Result: 
-        Epoch 9/30
-        1039/1039 [==============================] - 156s 150ms/step - loss: 0.3763 - acc: 0.8618 - val_loss: 0.6326 - val_acc: 0.7600
+    Result:
+        Epoch 8/30
+        1039/1039 [==============================] - 184s 177ms/step - loss: 0.3932 - acc: 0.8510 - val_loss: 0.6290 - val_acc: 0.7636
         
-        F1-Score 0.7602114246413237
-        Precision-Score 0.7624000793353243
-        Recall-Score 0.7600192562281863
-        Accuracy-Score 0.7600192562281863
+        F1-Score 0.7640027120919598
+        Precision-Score 0.7685396650317216
+        Recall-Score 0.7636297990131183
+        Accuracy-Score 0.7636297990131183
         tf.Tensor(
-        [[1868  388  299]
-        [ 225 2355  419]
-        [ 203  460 2092]], shape=(3, 3), dtype=int32)
+        [[1842  418  295]
+        [ 176 2394  429]
+        [ 169  477 2109]], shape=(3, 3), dtype=int32)
         True Labels Onlys tf.Tensor(
         [[2555    0    0]
         [   0 2999    0]
