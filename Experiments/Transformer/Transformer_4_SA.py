@@ -103,11 +103,9 @@ history = model.fit(tf.constant(train_input),
 print("l\n\n******Evaluations***********\n")
 
 pred_labels = [np.argmax(x) for x in 
-        tf.nn.softmax(
             model.predict(
                 x=tf.constant(test_input)
             )
-        )
     ]
 
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
@@ -129,7 +127,7 @@ cmd.plot()
 print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_classes=3))
 # print("True Labels Onlys",tf.math.confusion_matrix(labels,labels,num_classes=3))
 
-"""
+""" #1 - NepCov19TweetsPlus
     Experiment: Transformer(num_layers=1,d_model=256,GSA_num_heads=8,
                     LSA_num_heads=2,LSA_num_window=4,dff=512,
                     vocab_size=len(tokenizer),num_class=3)
@@ -146,6 +144,29 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
         [[1808  457  290]
         [ 179 2422  398]
         [ 167  539 2049]], shape=(3, 3), dtype=int32)
+        True Labels Onlys tf.Tensor(
+        [[2555    0    0]
+        [   0 2999    0]
+        [   0    0 2755]], shape=(3, 3), dtype=int32)
+"""
+
+""" #2 - NepCov19TweetsPlus
+    Experiment: Transformer(num_layers=2,d_model=256,GSA_num_heads=8,
+                    LSA_num_heads=2,LSA_num_window=4,dff=512,
+                    vocab_size=len(tokenizer),num_class=3)
+                    
+    Result: 
+        Epoch 9/30
+        1039/1039 [==============================] - 156s 150ms/step - loss: 0.4298 - acc: 0.8374 - val_loss: 0.6284 - val_acc: 0.7594
+        
+        F1-Score 0.7599534415196874
+        Precision-Score 0.7685185606343746
+        Recall-Score 0.7594174990973643
+        Accuracy-Score 0.7594174990973643
+        tf.Tensor(
+        [[1793  484  278]
+        [ 147 2444  408]
+        [ 138  544 2073]], shape=(3, 3), dtype=int32)
         True Labels Onlys tf.Tensor(
         [[2555    0    0]
         [   0 2999    0]
