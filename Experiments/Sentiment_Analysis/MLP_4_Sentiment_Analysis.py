@@ -120,8 +120,8 @@ except:
     model = Sequential()
     embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
     
-    print("*** Pre-Training a Embedding Layer ****")
-    embd_layer = preTrainEmbedding(embd_layer,data=[train_input,train_labels],label=[test_input,test_labels])
+    # print("*** Pre-Training a Embedding Layer ****")
+    # embd_layer = preTrainEmbedding(embd_layer,data=[train_input,train_labels],label=[test_input,test_labels])
     
     model.add(embd_layer)
     model.add(Flatten())

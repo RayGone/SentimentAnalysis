@@ -221,36 +221,20 @@ print("True Labels Onlys",tf.math.confusion_matrix(test_labels,test_labels,num_c
 
 '''
     *********** Best Result ***************
-    =================================================================
-    Total params: 13,003,813
-    Trainable params: 13,003,813
-    Non-trainable params: 0
-    _________________________________________________________________
-    Epoch 9/30
-    1039/1039 [==============================] - 45s 43ms/step - loss: 0.4637 - acc: 0.8303 - val_loss: 0.5928 - val_acc: 0.7720
-    Epoch 10/30
-    1039/1039 [==============================] - 46s 45ms/step - loss: 0.4398 - acc: 0.8404 - val_loss: 0.5908 - val_acc: 0.7712
-    Epoch 11/30
-    1039/1039 [==============================] - 48s 46ms/step - loss: 0.4171 - acc: 0.8510 - val_loss: 0.5979 - val_acc: 0.7716
-    Epoch 12/30
-    1038/1039 [============================>.] - ETA: 0s - loss: 0.3938 - acc: 0.8616Restoring model weights from the end of the best epoch: 9.
-    1039/1039 [==============================] - 47s 45ms/step - loss: 0.3936 - acc: 0.8617 - val_loss: 0.6050 - val_acc: 0.7705
-    Epoch 12: early stopping
 
+******Evaluations***********
 
-    ******Evaluations***********
-
-    260/260 [==============================] - 4s 13ms/step
-    F1-Score 0.7720589743286769
-    Precision-Score 0.7727716562784887
-    Recall-Score 0.7719614921780987
-    accuracy_Score 0.7719614921780987
-    tf.Tensor(
-    [[2018  289  276]
-    [ 282 2222  465]
-    [ 200  383 2175]], shape=(3, 3), dtype=int32)
-    True Labels Onlys tf.Tensor(
-    [[2583    0    0]
-    [   0 2969    0]
-    [   0    0 2758]], shape=(3, 3), dtype=int32)
+260/260 [==============================] - 7s 23ms/step
+F1-Score 0.7799774640346219
+Precision-Score 0.782310455826575
+Recall-Score 0.7795161872668191
+accuracy_Score 0.7795161872668191
+tf.Tensor(
+[[2045  335  297]
+ [ 214 2342  377]
+ [ 165  444 2090]], shape=(3, 3), dtype=int32)
+True Labels Onlys tf.Tensor(
+[[2677    0    0]
+ [   0 2933    0]
+ [   0    0 2699]], shape=(3, 3), dtype=int32)
 '''
