@@ -26,6 +26,7 @@ seed_everything(rand_seed)
 use_pre_trained_embd_layer = False
 use_googletrans_aug_data = False
 save_model = False
+tf.keras.mixed_precision.set_global_policy("mixed_float16")
 
 def preTrainEmbedding(embeddinglayer,train=[],val=[]):
     model = Sequential([
@@ -40,7 +41,7 @@ def preTrainEmbedding(embeddinglayer,train=[],val=[]):
     model.compile(
         optimizer=tf.keras.optimizers.Adam(
             learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=0.0001,
+                    initial_learning_rate=0.001,
                     decay_steps=100000,                
                     decay_rate=0.95,
                     staircase=True
@@ -126,15 +127,15 @@ test_labels = [LabelEncoding(x) for x in nepCov19['test']['Sentiment']]
 
 print("All True Labels",tf.math.confusion_matrix([np.argmax(x) for x in train_labels+test_labels],[np.argmax(x) for x in train_labels+test_labels],num_classes=3))
 
-embd_layer = Embedding(len(tokenizer), 380, input_length=max_len)
-if use_pre_trained_embd_layer:
-    print("\n****Using Pre-Trained Embedding Layer****")
-    embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
-else:
-    print("*** Pre-Training a Embedding Layer ****")
-    embd_layer = preTrainEmbedding(embd_layer,
-                                train=[tf.constant(train_input),tf.constant(train_labels)],
-                                val=[tf.constant(test_input),tf.constant(test_labels)])
+embd_layer = Embedding(len(tokenizer), 512, input_length=max_len)
+# if use_pre_trained_embd_layer:
+#     print("\n****Using Pre-Trained Embedding Layer****")
+#     embd_layer = tf.keras.models.load_model("saved_models/MLP_4_SA").get_layer(index=0)
+# else:
+#     print("*** Pre-Training a Embedding Layer ****")
+#     embd_layer = preTrainEmbedding(embd_layer,
+#                                 train=[tf.constant(train_input),tf.constant(train_labels)],
+#                                 val=[tf.constant(test_input),tf.constant(test_labels)])
     
 try:
     raise("Let's Build New Model")

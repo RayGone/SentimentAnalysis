@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.ops.numpy_ops import np_config
+np_config.enable_numpy_behavior()
 
 ##------------
 ##------Position----------------
@@ -12,37 +14,36 @@ import tensorflow as tf
         -> when 'add' it adds 'interleave' and 'concat'
 '''
 def PositionalEncoding(seq_length=2048,feature_depth=512,merge='interleave'):
-  depth = feature_depth/2
-  length = seq_length
+      depth = feature_depth/2
+      length = seq_length
 
-  positions = np.arange(length)[:, np.newaxis]              # (seq, 1)
-  depths = np.arange(depth)[np.newaxis, :]/depth            # (1, depth)
+      positions = np.arange(length)[:, np.newaxis]      # (seq, 1)
+      depths = np.arange(depth)[np.newaxis, :]/depth    # (1, depth)
 
-  angle_rates = 1 / (10000**depths)                         # (1, depth)
-  angle_rads = positions * angle_rates + angle_rates*0.1    # (pos, depth)
+      angle_rates = 1 / (10000**depths)                 # (1, depth)
+      angle_rads = positions * angle_rates + 0.0001     # (pos, depth)
 
-  sin = np.sin(angle_rads)
-  cos = np.cos(angle_rads)
-  pos_encoding = np.concatenate([sin, cos], axis=-1)
+      sin = np.sin(angle_rads)
+      cos = np.cos(angle_rads)
+      pos_encoding = np.concatenate([sin, cos], axis=-1)
 
-  ipos_encoding = np.zeros(pos_encoding.shape)
-  ipos_encoding[:, ::2] = sin
-  ipos_encoding[:, 1::2] = cos
-  if merge=='concat':
-        return tf.cast(pos_encoding, dtype=tf.float32)
-        print("Concatanation",str(pos_encoding[:2]),pos_encoding.shape)
-  elif merge=='add':
-        return tf.cast((pos_encoding+ipos_encoding)/2, dtype=tf.float32)
-  else:
-        return tf.cast(ipos_encoding, dtype=tf.float32)
-        print("Interleaving",str(ipos_encoding[:2]),ipos_encoding.shape)
+      ipos_encoding = np.zeros(pos_encoding.shape)
+      ipos_encoding[:, ::2] = sin
+      ipos_encoding[:, 1::2] = cos
+      if merge=='concat':
+            return tf.cast(pos_encoding, dtype=tf.float32)
+            print("Concatanation",str(pos_encoding[:2]),pos_encoding.shape)
+      else:
+            return tf.cast(ipos_encoding, dtype=tf.float32)
+            print("Interleaving",str(ipos_encoding[:2]),ipos_encoding.shape)
 
 class PositionalEmbedding(tf.keras.layers.Layer):
-  def __init__(self, vocab_size, d_model, context_length=2048,pos_enc_merge='add'):
+  def __init__(self, vocab_size, d_model, context_length=2048,pos_enc_merge='interleave'):
     super().__init__()
     self._name='PosEmbd'
     self.d_model = d_model
-    self.embedding = tf.keras.layers.Embedding(vocab_size, d_model, mask_zero=True)
+    self.embedding = tf.keras.layers.Embedding(vocab_size, d_model,
+                                               mask_zero=True)
     self.pos_encoding = PositionalEncoding(seq_length=context_length, feature_depth=d_model,merge=pos_enc_merge)
 
   def compute_mask(self, *args, **kwargs):
@@ -59,7 +60,6 @@ class PositionalEmbedding(tf.keras.layers.Layer):
 ##------------
 ##------Attention----------------
 ##----------------------
-
 class BaseAttention(tf.keras.layers.Layer):
   def __init__(self, **kwargs):
     super().__init__()
@@ -67,36 +67,49 @@ class BaseAttention(tf.keras.layers.Layer):
     self.layernorm = tf.keras.layers.LayerNormalization()
     self.add = tf.keras.layers.Add()
 
-  def build(self,input_shape):
-    self.mha._build_from_signature(tf.TensorShape(input_shape),tf.TensorShape(input_shape),tf.TensorShape(input_shape))
 
-class GlobalSelfAttention(BaseAttention):
+"""LocalizedSelfAttention
+    Note: When specifiying num_heads for LocalizedSelfAttention, specify half of what you want.
+    if you want 8 heads, set num_heads to 4. Because there is two instances of self attention.
+"""
+
+class LocalGlobalSelfAttention(tf.keras.layers.Layer):
+  def __init__(self,num_heads, key_dim, dropout, num_window=8):
+    super().__init__()
+    self._name='LocalGlobal_Self_Attention'
+    
+    self.local_mha = tf.keras.layers.MultiHeadAttention(num_heads=num_heads,key_dim=key_dim,dropout=dropout)
+    self.global_mha = tf.keras.layers.MultiHeadAttention(num_heads=num_heads,key_dim=key_dim,dropout=dropout)
+
+    self.layernorm = tf.keras.layers.LayerNormalization()
+    self.add = tf.keras.layers.Add()
+    
+    self.num_window = num_window
+    self.concat_layer = tf.keras.layers.Concatenate(axis=1)
+    
+    self.global_attention_score = None
+    self.local_attention_score = None
+
+    
   def call(self, x):
-    attn_output = self.mha(
+    ##-------------------------------------
+    global_attn_output,self.global_attention_score = self.global_mha(
         query=x,
         value=x,
-        key=x)
+        key=x, return_attention_scores=True)
     
-    self.attention_output = attn_output
-    x = self.add([x, attn_output])
-    x = self.layernorm(x)
-    return x
-
-class LocalizedSelfAttention(BaseAttention):
-  def __init__(self, num_window=8,**kwargs):
-    super().__init__(**kwargs)
-    self._name='Local_Self_Attention'
-    self.num_window = num_window
-    self.reshape_orig_layer = None
-    self.reshape_window_layer = None
-    self.concat_layer = tf.keras.layers.Concatenate(axis=1)
-
-  def call(self, x):                                 
-    self.attention_output = self.concat_layer([
-      self.mha(key=t,query=t,value=t)
-      for t in tf.split(x,num_or_size_splits=self.num_window,axis=1)
-    ])
-    x = self.add([x, self.attention_output])
+    ##---------------------------------------
+    local_attn_output = []
+    self.local_attention_score = []
+    for t in tf.split(x,num_or_size_splits=self.num_window,axis=1):
+      aout, ascore = self.local_mha(key=t,query=t,value=t,return_attention_scores=True)
+      local_attn_output.append(aout)
+      self.local_attention_score.append(ascore)
+      
+    local_attn_output = self.concat_layer(local_attn_output)
+    
+    ##---------------------------------------
+    x = self.add([x, global_attn_output,local_attn_output])
     x = self.layernorm(x)
     return x
 
